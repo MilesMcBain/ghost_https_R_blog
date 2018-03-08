@@ -1,0 +1,52 @@
+version: '2'
+
+services:
+
+  ghost:
+    image: ghost:1.21.3-alpine
+    restart: always
+    environment:
+      NODE_ENV: production
+      url: https://milesmcbain.xyz
+      mail__transport: SMTP
+      mail__options__service: Mailgun
+      mail__options__auth__user: <My Mailgun User>
+      mail__options__auth__pass: <My Mailgun Password>
+      VIRTUAL_HOST: milesmcbain.xyz
+      LETSENCRYPT_HOST: milesmcbain.xyz
+      LETSENCRYPT_EMAIL: <My Email>
+    volumes:
+      - ~/data/ghost:/var/lib/ghost/content
+
+  rstudio:
+    image: rocker/tidyverse
+    restart: always
+    ports:
+      - "8787:8787"
+    environment:
+      USER: <My RStudio User>
+      PASSWORD: <My RStudio Password>
+      ROOT: "TRUE"
+      VIRTUAL_HOST: <My RStudio Domain>
+      LETSENCRYPT_HOST: <My RStudio Domain>
+      LETSENCRYPT_EMAIL: <My Email>
+    volumes:
+      - ~/repos:/home/milesmcbain/repos
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx/vhost.d"
+      - "/usr/share/nginx/html"
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "/etc/nginx/certs"
+
+  letsencrypt-nginx-proxy-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    volumes_from:
+      - "nginx-proxy
